@@ -67,3 +67,60 @@ Once you're back from the store or done cooking, say so:
 - Nothing here is ever invented. If a recipe isn't archived yet, you'll be told to digitize it first rather than getting a fabricated one.
 - `preferences.md` is meant to evolve — update it any time your staples or tastes change, and future plans will follow.
 - The `Seasonal / right now` section of `pantry.md` is where a garden glut (like tomatoes) gets flagged so meal plans lean into using it up.
+
+## Run the CookingSkills app in ChatGPT
+
+The user-facing workflow runs inside ChatGPT with the Google Drive app. Cookbook data stays in Google Drive; the app
+does not require a local folder or a Drive desktop sync client.
+
+1. Open the CookingSkills app in ChatGPT and connect **Google Drive** using the user's own Google account.
+2. The app uses two Drive folders:
+   - **Reference library:** [CookingSkills on Google Drive](https://drive.google.com/drive/folders/1WcyfaUxNbs298Vko669qz_JqajkpXDsa?usp=sharing). This is shared with users as **Viewer** and contains shared cookbooks, skills, and templates.
+   - **Personal cookbook library:** a folder owned by the user. It stores that user's recipe documents and meal plans, including any copyrighted cookbooks they have permission to use.
+3. Set the Google Drive app permission in ChatGPT to **Any changes**, so the user approves every creation or edit.
+4. Ask the app to add recipes, plan meals, or show the current meal. It must read shared material from the reference
+   library and write only to the personal cookbook library.
+
+Use these rules in the app or Project instructions:
+
+> Treat the reference library as read-only: never create, edit, move, share, or delete files there. Before creating or
+> changing a recipe document, confirm the target is in the user-owned personal cookbook library and ask for approval. Do
+> not share, publish, or reuse a user's cookbook content for another user.
+
+`SKILL.md` is reference material in this model; put the operational rules in the app or Project instructions so they
+apply to every conversation.
+
+## Deploy the app and bootstrap Google Drive
+
+Deployment copies the shared repository material to the reference Drive folder and creates only the empty starter
+structure in the configured user Drive folder. It does not download or synchronize Drive content to the developer's
+disk, and it never deletes Drive files.
+
+1. In Google Cloud, enable the **Google Drive API**, configure an OAuth consent screen, and create a **Desktop app**
+   OAuth client.
+2. Copy `setenv.example.sh` to `setenv.sh`. Set the two folder URLs and the Desktop OAuth client ID and secret. Keep
+   `setenv.sh` private; it is ignored by Git.
+3. Install the deployment dependencies:
+
+   ```bash
+   make install-deploy-deps
+   ```
+
+4. Review the planned changes without a Google login or write:
+
+   ```bash
+   make dry-run
+   ```
+
+5. Deploy:
+
+   ```bash
+   make deploy
+   ```
+
+   The command opens a Google browser login. Its credentials remain in memory for that deployment and are not written to
+   a local token file.
+
+`make deploy` updates the reference folder's `cookbooks/` and `skills/` trees. In the user folder, it creates
+`cookbooks/`, `meal-plans/`, and `My CookingSkills Library.md` if they are missing; it leaves existing user recipes
+alone. Each app user should have their own `USER_DRIVE_DIR` rather than sharing one writable folder.
